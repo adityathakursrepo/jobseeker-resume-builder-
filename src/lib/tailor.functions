@@ -1,1 +1,16 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+
+const schema = z.object({
+  resumeText: z.string().min(80, "Please paste a bit more of your resume."),
+  jobDescription: z.string().min(40, "Please paste a bit more of the job description."),
+  personalWriteup: z.string().max(1200).optional(),
+});
+
+export const tailorResume = createServerFn({ method: "POST" })
+  .inputValidator((data) => schema.parse(data))
+  .handler(async ({ data }) => {
+    const { runTailorPipeline } = await import("./agents.server");
+    return runTailorPipeline(data);
+  });
 
