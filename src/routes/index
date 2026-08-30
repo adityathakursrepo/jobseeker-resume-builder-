@@ -1,1 +1,130 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
 
+export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "JobSeeker — Multi-Agent Resume Tailor" },
+      {
+        name: "description",
+        content:
+          "Paste your resume and a job posting. Four AI agents research the role, profile your experience, rewrite your resume and prepare your interview answers.",
+      },
+      { property: "og:title", content: "JobSeeker — Multi-Agent Resume Tailor" },
+      {
+        property: "og:description",
+        content:
+          "A four-agent pipeline that rewrites your resume for one specific job — without inventing experience.",
+      },
+    ],
+  }),
+  component: Index,
+});
+
+const pipeline = [
+  { n: "01", t: "Researcher", d: "Splits the posting into must-haves and nice-to-haves." },
+  { n: "02", t: "Profiler", d: "Turns your resume into a structured picture of your strengths." },
+  { n: "03", t: "Strategist", d: "Rewrites the resume against the requirements. Invents nothing." },
+  { n: "04", t: "Interviewer", d: "Predicts the questions and gives you talking points." },
+];
+
+const principles = [
+  {
+    t: "Zero fabrication",
+    d: "The strategist agent is instructed only to reorganise, re-emphasise and rephrase what is already true on your resume.",
+  },
+  {
+    t: "One job at a time",
+    d: "Generic resumes lose. Every run targets a single posting, so the summary and bullets speak to that employer.",
+  },
+  {
+    t: "Nothing stored",
+    d: "Your resume text lives only for the length of the request. No accounts, no database, no retention.",
+  },
+];
+
+function Index() {
+  return (
+    <div>
+      {/* Hero */}
+      <section className="relative overflow-hidden border-b border-border/70">
+        <div className="absolute inset-0 rule-dotted opacity-60" aria-hidden />
+        <div className="relative mx-auto w-full max-w-6xl px-5 py-24 text-center sm:py-32">
+          <p className="eyebrow text-accent-foreground/70">Four agents · one resume</p>
+          <h1 className="mx-auto mt-5 max-w-3xl text-5xl font-bold leading-[1.05] sm:text-6xl">
+            Stop sending the same resume{" "}
+            <span className="text-warm-gradient">to every job</span>
+          </h1>
+          <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
+            JobSeeker reads the posting, reads you, and rewrites your resume so a hiring manager sees
+            the match in six seconds — using only what's already true.
+          </p>
+          <div className="mt-9 flex justify-center">
+            <Link
+              to="/tailor"
+              className="rounded-lg bg-primary px-6 py-3.5 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-lift)] transition-transform hover:-translate-y-0.5"
+            >
+              Tailor my resume
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Pipeline */}
+      <section className="mx-auto w-full max-w-6xl px-5 py-20">
+        <div className="max-w-xl">
+          <h2 className="text-3xl font-bold">The hand-off chain</h2>
+          <p className="mt-3 text-muted-foreground">
+            Each agent has exactly one job and passes its output to the next.
+          </p>
+        </div>
+        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {pipeline.map((s) => (
+            <div key={s.n} className="card-soft p-6">
+              <span className="font-mono text-xs text-accent-foreground/60">{s.n}</span>
+              <h3 className="mt-3 font-display text-lg font-bold">{s.t}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{s.d}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Principles on ink */}
+      <section className="surface-ink">
+        <div className="mx-auto w-full max-w-6xl px-5 py-20">
+          <h2 className="max-w-lg text-3xl font-bold">Built on three rules</h2>
+          <div className="mt-10 grid gap-8 sm:grid-cols-3">
+            {principles.map((p) => (
+              <div key={p.t}>
+                <div className="h-px w-10 bg-accent" />
+                <h3 className="mt-4 font-display text-lg font-bold">{p.t}</h3>
+                <p className="mt-2 text-sm leading-relaxed opacity-75">{p.d}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Closing */}
+      <section className="mx-auto w-full max-w-3xl px-5 py-20 text-center">
+        <h2 className="text-3xl font-bold">One posting. One tailored resume.</h2>
+        <p className="mt-3 text-muted-foreground">
+          Bring plain text — the agents do the reading, rewriting and interview prep in a single run.
+        </p>
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
+          <Link
+            to="/tailor"
+            className="rounded-lg bg-primary px-6 py-3.5 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-soft)] transition-opacity hover:opacity-90"
+          >
+            Start a run
+          </Link>
+          <Link
+            to="/how-it-works"
+            className="rounded-lg border border-input px-6 py-3.5 text-sm font-semibold transition-colors hover:bg-secondary"
+          >
+            See the agents
+          </Link>
+        </div>
+      </section>
+    </div>
+  );
+}
