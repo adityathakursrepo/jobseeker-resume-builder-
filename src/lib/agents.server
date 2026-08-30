@@ -1,1 +1,57 @@
+import { callAgent } from "./ai.server";
+
+/**
+ * @typedef {Object} TailorInput
+ * @property {string} resumeText
+ * @property {string} jobDescription
+ * @property {string} [personalWriteup]
+ */
+
+/**
+ * @typedef {Object} TailorResult
+ * @property {string} requirements
+ * @property {string} profile
+ * @property {string} resume
+ * @property {string} interviewPrep
+ */
+
+const RESEARCHER = `You are a Tech Job Researcher. You read job postings and pull out exactly what a hiring manager cares about: required skills, nice-to-haves, years of experience, and the underlying priorities behind the wording. Answer in clean Markdown with short headings and bullet lists. No preamble.`;
+
+const PROFILER = `You are a Personal Profiler for Candidates. You dissect resumes and personal write-ups to build a full picture of a candidate's skills, achievements, and career trajectory, ready to be matched against a job's requirements. Answer in clean Markdown. No preamble.`;
+
+const STRATEGIST = `You are a Resume Strategist. You reframe real experience so it speaks directly to a specific employer. You NEVER fabricate skills, experience, employers, dates, or credentials the candidate does not have — you only reorganize, re-emphasize, and rephrase what is already true. Output ONLY the finished resume in clean Markdown, starting with the candidate's name as an H1. No commentary.`;
+
+const INTERVIEWER = `You are an Interview Preparer who has sat on the other side of hundreds of interviews. You know what interviewers actually probe for. Answer in clean Markdown: numbered questions, each followed by a short "Talking points" bullet list grounded in the candidate's real experience. No preamble.`;
+
+/**
+ * Runs the four-agent hand-off chain: research → profile → rewrite → interview prep.
+ * @param {TailorInput} input
+ * @returns {Promise<TailorResult>}
+ */
+export async function runTailorPipeline(input) {
+  const personal = input.personalWriteup?.trim() || "No additional context provided.";
+
+  const [requirements, profile] = await Promise.all([
+    callAgent(
+      RESEARCHER,
+      `Analyze the following job description and extract a structured list of required skills, qualifications, and experience. Separate must-haves from nice-to-haves, and end with a short "What they really care about" section.\n\nJOB DESCRIPTION:\n${input.jobDescription}`,
+    ),
+    callAgent(
+      PROFILER,
+      `Build a detailed candidate profile from the resume and personal write-up below. Cover skills, key achievements, work history highlights, notable projects, and apparent career trajectory.\n\nRESUME:\n${input.resumeText}\n\nPERSONAL WRITE-UP:\n${personal}`,
+    ),
+  ]);
+
+  const resume = await callAgent(
+    STRATEGIST,
+    `Rewrite the candidate's resume so it best matches this job. Update the summary, experience bullet points, skills, and education ordering as needed. Invent nothing.\n\nJOB REQUIREMENTS:\n${requirements}\n\nCANDIDATE PROFILE:\n${profile}\n\nORIGINAL RESUME:\n${input.resumeText}`,
+  );
+
+  const interviewPrep = await callAgent(
+    INTERVIEWER,
+    `Write 8 likely interview questions (mix of behavioral and technical/role-specific) with talking points, based on the tailored resume and job requirements below.\n\nJOB REQUIREMENTS:\n${requirements}\n\nTAILORED RESUME:\n${resume}`,
+  );
+
+  return { requirements, profile, resume, interviewPrep };
+}
 
