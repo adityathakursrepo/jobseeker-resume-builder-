@@ -1,1 +1,15 @@
+import { Link } from "@tanstack/react-router";
+
+export function SiteFooter() {
+  return (
+    <footer className="border-t border-border/70 bg-secondary/50">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-2 px-5 py-8 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+        <p>JobSeeker — a multi-agent resume tailoring project by Aditya Thakur.</p>
+        <Link to="/how-it-works" className="hover:text-foreground">
+          How the agents work
+        </Link>
+      </div>
+    </footer>
+  );
+}
 
