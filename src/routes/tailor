@@ -1,1 +1,251 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { useMutation } from "@tanstack/react-query";
+import { useState } from "react";
+import { toast } from "sonner";
+import { tailorResume } from "@/lib/tailor.functions";
+import { MarkdownPanel } from "@/components/markdown-panel";
+
+export const Route = createFileRoute("/tailor")({
+  head: () => ({
+    meta: [
+      { title: "Tailor Your Resume to a Job — JobSeeker" },
+      {
+        name: "description",
+        content:
+          "Paste your resume and a job description. Four AI agents extract the requirements, profile you, rewrite the resume and prep your interview answers.",
+      },
+      { property: "og:title", content: "Tailor Your Resume to a Job — JobSeeker" },
+      {
+        property: "og:description",
+        content:
+          "Paste a resume and a job description, get a tailored resume plus interview prep in one pass.",
+      },
+    ],
+  }),
+  component: TailorPage,
+});
+
+/** @typedef {"resume" | "interview" | "requirements" | "profile"} TabKey */
+
+/** @type {Array<{ key: TabKey; label: string }>} */
+const tabs = [
+  { key: "resume", label: "Tailored resume" },
+  { key: "interview", label: "Interview prep" },
+  { key: "requirements", label: "Job requirements" },
+  { key: "profile", label: "Candidate profile" },
+];
+
+function TailorPage() {
+  const [resumeText, setResumeText] = useState("");
+  const [jobDescription, setJobDescription] = useState("");
+  const [personalWriteup, setPersonalWriteup] = useState("");
+  const [tab, setTab] = useState("resume");
+
+  const run = useServerFn(tailorResume);
+  const mutation = useMutation({
+    mutationFn: () =>
+      run({ data: { resumeText, jobDescription, personalWriteup: personalWriteup || undefined } }),
+    onError: (error) => toast.error(error.message || "Something went wrong."),
+    onSuccess: () => {
+      setTab("resume");
+      toast.success("Your tailored resume is ready.");
+    },
+  });
+
+  const result = mutation.data;
+
+  /** @type {Record<TabKey, string> | undefined} */
+  const content =
+    result && {
+      resume: result.resume,
+      interview: result.interviewPrep,
+      requirements: result.requirements,
+      profile: result.profile,
+    };
+
+  function download() {
+    if (!result) return;
+    const blob = new Blob(
+      [`${result.resume}\n\n---\n\n# Interview Prep\n\n${result.interviewPrep}\n`],
+      { type: "text/markdown" },
+    );
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "tailored-resume.md";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  return (
+    <div className="mx-auto w-full max-w-6xl px-5 py-12">
+      <div className="max-w-2xl">
+        <p className="eyebrow text-accent-foreground/70">The workspace</p>
+        <h1 className="mt-3 text-3xl font-bold sm:text-4xl">Tailor a resume to one job</h1>
+        <p className="mt-3 text-muted-foreground">
+          Paste the two things that matter. The agents handle the rest — and never invent experience
+          you don't have.
+        </p>
+      </div>
+
+      <div className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1fr)]">
+        <form
+          className="card-soft h-fit space-y-5 p-6"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (resumeText.trim().length < 80) {
+              toast.error("Paste a bit more of your resume (at least 80 characters).");
+              return;
+            }
+            if (jobDescription.trim().length < 40) {
+              toast.error("Paste a bit more of the job description.");
+              return;
+            }
+            mutation.mutate();
+          }}
+        >
+          <Field
+            label="Your resume"
+            hint="Plain text is fine — copy it straight out of your PDF or doc."
+          >
+            <textarea
+              value={resumeText}
+              onChange={(e) => setResumeText(e.target.value)}
+              rows={12}
+              placeholder="Aditya Thakur&#10;B.Tech CSE · Python, React, ML&#10;Experience…"
+              className="w-full resize-y rounded-lg border border-input bg-background px-3.5 py-3 font-mono text-[0.8rem] leading-relaxed outline-none transition-shadow placeholder:text-muted-foreground/60 focus:ring-2 focus:ring-ring/40"
+            />
+          </Field>
+
+          <Field label="Job description" hint="Paste the posting text you're targeting.">
+            <textarea
+              value={jobDescription}
+              onChange={(e) => setJobDescription(e.target.value)}
+              rows={8}
+              placeholder="Role, responsibilities, requirements…"
+              className="w-full resize-y rounded-lg border border-input bg-background px-3.5 py-3 font-mono text-[0.8rem] leading-relaxed outline-none transition-shadow placeholder:text-muted-foreground/60 focus:ring-2 focus:ring-ring/40"
+            />
+          </Field>
+
+          <Field label="About you" hint="Optional — goals or strengths, a sentence or two.">
+            <textarea
+              value={personalWriteup}
+              onChange={(e) => setPersonalWriteup(e.target.value)}
+              rows={3}
+              maxLength={1200}
+              placeholder="I want to move into backend-heavy roles…"
+              className="w-full resize-y rounded-lg border border-input bg-background px-3.5 py-3 text-sm leading-relaxed outline-none transition-shadow placeholder:text-muted-foreground/60 focus:ring-2 focus:ring-ring/40"
+            />
+          </Field>
+
+          <button
+            type="submit"
+            disabled={mutation.isPending}
+            className="w-full rounded-lg bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-soft)] transition-opacity hover:opacity-90 disabled:opacity-60"
+          >
+            {mutation.isPending ? "Agents are working…" : "Run the four agents"}
+          </button>
+          <p className="text-center text-xs text-muted-foreground">
+            Takes around 30–60 seconds. Nothing is stored.
+          </p>
+        </form>
+
+        <div className="min-w-0">
+          {mutation.isPending && <Working />}
+
+          {!mutation.isPending && !content && (
+            <div className="card-soft grid h-full min-h-80 place-items-center p-10 text-center">
+              <div>
+                <p className="font-display text-lg font-semibold">Your results land here</p>
+                <p className="mt-2 max-w-sm text-sm text-muted-foreground">
+                  A rewritten resume, predicted interview questions, the extracted requirements, and
+                  the profile the agents built of you.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {!mutation.isPending && content && (
+            <div className="card-soft overflow-hidden">
+              <div className="flex flex-wrap items-center gap-1 border-b border-border bg-secondary/60 p-2">
+                {tabs.map((t) => (
+                  <button
+                    key={t.key}
+                    onClick={() => setTab(t.key)}
+                    className={
+                      "rounded-md px-3 py-1.5 text-xs font-medium transition-colors " +
+                      (tab === t.key
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:bg-background hover:text-foreground")
+                    }
+                  >
+                    {t.label}
+                  </button>
+                ))}
+                <button
+                  onClick={download}
+                  className="ml-auto rounded-md border border-input px-3 py-1.5 text-xs font-medium hover:bg-background"
+                >
+                  Download .md
+                </button>
+              </div>
+              <div className="max-h-[70vh] overflow-y-auto p-6">
+                <MarkdownPanel>{content[tab]}</MarkdownPanel>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * @param {{ label: string, hint: string, children: import("react").ReactNode }} props
+ */
+function Field({ label, hint, children }) {
+  return (
+    <label className="block">
+      <span className="font-display text-sm font-semibold">{label}</span>
+      <span className="mt-0.5 block text-xs text-muted-foreground">{hint}</span>
+      <span className="mt-2 block">{children}</span>
+    </label>
+  );
+}
+
+const steps = [
+  "Reading the job posting",
+  "Profiling your experience",
+  "Rewriting the resume",
+  "Predicting interview questions",
+];
+
+function Working() {
+  return (
+    <div className="card-soft h-full min-h-80 p-8">
+      <p className="eyebrow text-accent-foreground/70">Running</p>
+      <ul className="mt-5 space-y-3">
+        {steps.map((s, i) => (
+          <li key={s} className="flex items-center gap-3 text-sm">
+            <span
+              className="size-2 rounded-full bg-accent"
+              style={{ animation: `pulse 1.4s ease-in-out ${i * 0.25}s infinite` }}
+            />
+            <span className="text-muted-foreground">{s}</span>
+          </li>
+        ))}
+      </ul>
+      <div className="mt-8 space-y-2.5">
+        {[92, 78, 85, 60, 88, 70].map((w, i) => (
+          <div
+            key={i}
+            className="h-3 rounded bg-muted"
+            style={{ width: `${w}%`, animation: `pulse 1.6s ease-in-out ${i * 0.12}s infinite` }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
 
