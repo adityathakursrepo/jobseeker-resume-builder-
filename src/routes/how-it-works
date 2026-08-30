@@ -1,1 +1,113 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+
+export const Route = createFileRoute("/how-it-works")({
+  head: () => ({
+    meta: [
+      { title: "How the Agents Work — JobSeeker Resume Tailor" },
+      {
+        name: "description",
+        content:
+          "Inside JobSeeker: four specialised AI agents research the job, profile the candidate, rewrite the resume, and prepare interview answers.",
+      },
+      { property: "og:title", content: "How the JobSeeker Agents Work" },
+      {
+        property: "og:description",
+        content:
+          "A researcher, a profiler, a resume strategist and an interview preparer, chained into one pipeline.",
+      },
+    ],
+  }),
+  component: HowItWorks,
+});
+
+const agents = [
+  {
+    step: "01",
+    role: "Tech Job Researcher",
+    goal: "Extract a clear, structured list of requirements from the job posting.",
+    detail:
+      "Reads the posting the way a hiring manager wrote it — splitting must-haves from nice-to-haves and surfacing the priorities hidden in the wording.",
+  },
+  {
+    step: "02",
+    role: "Personal Profiler",
+    goal: "Build a comprehensive profile of the candidate.",
+    detail:
+      "Dissects the resume plus any personal write-up into skills, achievements, projects and career trajectory, ready to be matched.",
+  },
+  {
+    step: "03",
+    role: "Resume Strategist",
+    goal: "Rewrite the resume so it is maximally relevant — without inventing anything.",
+    detail:
+      "Takes the requirements and the profile as context, then reorganises, re-emphasises and rephrases what is already true. Fabrication is explicitly forbidden.",
+  },
+  {
+    step: "04",
+    role: "Interview Preparer",
+    goal: "Prepare likely questions and strong talking points.",
+    detail:
+      "Works from the tailored resume and the requirements to predict what interviewers will probe, with answers grounded in real experience.",
+  },
+];
+
+const stack = [
+  ["Orchestration", "Sequential agent pipeline — each agent receives the previous agents' output as context."],
+  ["Models", "Fast, low-latency chat models served through a single gateway, replacing the notebook's Groq + Gemini split."],
+  ["Runtime", "TanStack Start server functions. Nothing you paste is stored — it lives only in the request."],
+  ["Origin", "Started as a CrewAI Colab notebook with four Agents and four chained Tasks."],
+];
+
+function HowItWorks() {
+  return (
+    <div>
+      <section className="border-b border-border/70 rule-dotted">
+        <div className="mx-auto w-full max-w-4xl px-5 py-16">
+          <p className="eyebrow text-accent-foreground/70">Under the hood</p>
+          <h1 className="mt-3 text-4xl font-bold sm:text-5xl">Four agents, one hand-off chain</h1>
+          <p className="mt-4 max-w-2xl text-lg text-muted-foreground">
+            The original college project ran as a CrewAI crew in a Colab notebook. This site keeps
+            the same division of labour — every agent has one job, and passes its output forward.
+          </p>
+        </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-4xl px-5 py-14">
+        <ol className="space-y-4">
+          {agents.map((a) => (
+            <li key={a.step} className="card-soft flex gap-5 p-6">
+              <span className="font-mono text-sm text-accent-foreground/60">{a.step}</span>
+              <div>
+                <h2 className="font-display text-lg font-bold">{a.role}</h2>
+                <p className="mt-1 text-sm font-medium text-primary">{a.goal}</p>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{a.detail}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <section className="border-t border-border/70 bg-secondary/40">
+        <div className="mx-auto w-full max-w-4xl px-5 py-14">
+          <h2 className="text-2xl font-bold">Implementation notes</h2>
+          <dl className="mt-6 grid gap-5 sm:grid-cols-2">
+            {stack.map(([term, desc]) => (
+              <div key={term}>
+                <dt className="eyebrow text-muted-foreground">{term}</dt>
+                <dd className="mt-1.5 text-sm leading-relaxed">{desc}</dd>
+              </div>
+            ))}
+          </dl>
+
+          <Link
+            to="/tailor"
+            className="mt-10 inline-flex rounded-lg bg-primary px-5 py-3 text-sm font-medium text-primary-foreground shadow-[var(--shadow-soft)] transition-opacity hover:opacity-90"
+          >
+            Run the pipeline
+          </Link>
+        </div>
+      </section>
+    </div>
+  );
+}
 
