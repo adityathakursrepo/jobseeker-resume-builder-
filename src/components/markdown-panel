@@ -1,1 +1,12 @@
+import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+
+/** @param {{ children: string }} props */
+export function MarkdownPanel({ children }) {
+  return (
+    <div className="md-body text-sm text-foreground/90">
+      <Markdown remarkPlugins={[remarkGfm]}>{children}</Markdown>
+    </div>
+  );
+}
 
