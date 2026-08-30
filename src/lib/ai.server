@@ -1,1 +1,43 @@
+const MODEL = "gemini-3.6-flash";
+const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
+
+/**
+ * Sends one system/user prompt pair to Gemini and returns the plain-text reply.
+ * @param {string} system
+ * @param {string} user
+ * @returns {Promise<string>}
+ */
+export async function callAgent(system, user) {
+  const apiKey = process.env["GEMINI_API_KEY"];
+  if (!apiKey) throw new Error("GEMINI_API_KEY is not set for this project.");
+
+  const res = await fetch(API_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-goog-api-key": apiKey,
+    },
+    body: JSON.stringify({
+      systemInstruction: { parts: [{ text: system }] },
+      contents: [{ role: "user", parts: [{ text: user }] }],
+      generationConfig: { temperature: 0.4 },
+    }),
+  });
+
+  if (res.status === 429) throw new Error("Gemini rate limit hit — try again in a moment.");
+  if (res.status === 401 || res.status === 403)
+    throw new Error("Gemini rejected the API key. Check GEMINI_API_KEY.");
+  if (!res.ok) {
+    const detail = await res.text();
+    throw new Error(`Gemini request failed (${res.status}): ${detail.slice(0, 200)}`);
+  }
+
+  const data = await res.json();
+  const content = data.candidates?.[0]?.content?.parts
+    ?.map((p) => p.text ?? "")
+    .join("")
+    .trim();
+  if (!content) throw new Error("Gemini returned an empty response.");
+  return content;
+}
 
